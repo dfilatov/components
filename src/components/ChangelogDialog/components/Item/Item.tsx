@@ -1,6 +1,7 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {Button, Label, Icon} from '@gravity-ui/uikit';
 import {CirclePlay} from '@gravity-ui/icons';
+import {dateTimeParse, settings} from '@gravity-ui/date-utils';
 
 import {block} from '../../../utils/cn';
 import i18n from '../../i18n';
@@ -17,11 +18,42 @@ export interface ItemProps {
     onStoryClick?: (storyId: string) => void;
 }
 
+const formatLangDisplay = {
+    'YYYY-MM-DD': {
+        en: 'D MMMM YYYY',
+    },
+    'YYYY-MM': {
+        en: 'MMMM YYYY',
+    },
+    YYYY: {
+        ru: 'YYYY год',
+        en: 'YYYY',
+    },
+};
+
 export function Item({className, data, onStoryClick}: ItemProps) {
+    const formattedDate = useMemo(() => {
+        let value;
+        if (!data.date) return value;
+
+        const locale = settings.getLocale();
+        Object.keys(formatLangDisplay).some((format) => {
+            const langFormat = formatLangDisplay[format as keyof typeof formatLangDisplay];
+            const dt = dateTimeParse(data.date, {format});
+            if (dt?.isValid()) {
+                value = dt.format(langFormat[locale as keyof typeof langFormat] || langFormat.en);
+                return true;
+            }
+            return false;
+        });
+
+        return value;
+    }, [data.date]);
+
     return (
         <article className={b(null, className)}>
             <div className={b('meta')}>
-                {data.date ? <div className={b('date')}>{data.date}</div> : null}
+                {formattedDate ? <div className={b('date')}>{formattedDate}</div> : null}
                 {data.isNew ? (
                     <Label className={b('label-new')} theme="info">
                         {i18n('label_new')}
